@@ -1,0 +1,122 @@
+Users Collection:
+
+json--
+
+{
+  "_id": ObjectId("user_id"),
+  "name": "John Doe",
+  "email": "john@example.com",
+  "user_id": "1001",
+  "tasks_solved": 10,
+  "attendance": [
+    {
+      "date": ISODate("2020-10-20"),
+      "present": true
+    }
+  ]
+}
+Codekata Collection:
+
+
+{
+  "_id": ObjectId("codekata_id"),
+  "problem_name": "Problem A",
+  "user_id": "1001",
+  "date_solved": ISODate("2020-10-25")
+}
+Attendance Collection:
+
+{
+  "_id": ObjectId("attendance_id"),
+  "user_id": "1001",
+  "date": ISODate("2020-10-20"),
+  "present": true
+}
+Topics Collection:
+
+{
+  "_id": ObjectId("topic_id"),
+  "topic_name": "MongoDB Basics",
+  "date": ISODate("2020-10-05")
+}
+Tasks Collection:
+{
+  "_id": ObjectId("task_id"),
+  "task_name": "Task 1",
+  "description": "Task description...",
+  "due_date": ISODate("2020-10-30")
+}
+CompanyDrives Collection:
+
+{
+  "_id": ObjectId("drive_id"),
+  "company_name": "XYZ Corp",
+  "drive_date": ISODate("2020-10-20"),
+  "students_appeared": ["1001", "1002", "1003"]
+}
+Mentors Collection:
+
+{
+  "_id": ObjectId("mentor_id"),
+  "mentor_name": "Mentor A",
+  "mentee_count": 20
+}
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+tasks section--
+
+Task 1: Find all the topics and tasks taught in the month of October
+javascript-
+
+db.topics.find({ "date": { $gte: ISODate("2020-10-01"), $lte: ISODate("2020-10-31") } })
+db.tasks.find({ "due_date": { $gte: ISODate("2020-10-01"), $lte: ISODate("2020-10-31") } })
+Task 2: Find all the company drives between 15 Oct 2020 and 31 Oct 2020
+javascript-
+db.companyDrives.find({ "drive_date": { $gte: ISODate("2020-10-15"), $lte: ISODate("2020-10-31") } })
+Task 3: Find all the company drives and students who appeared for the placement
+javascript-
+db.companyDrives.find({}, { "company_name": 1, "students_appeared": 1 })
+Task 4: Find the number of problems solved by the user in codekata
+javascript-
+db.codekata.aggregate([
+  { $match: { "user_id": "1001" } },
+  { $group: { _id: null, count: { $sum: 1 } } }
+])
+Task 5: Find all the mentors with mentee count more than 15
+javascript-
+db.mentors.find({ "mentee_count": { $gt: 15 } })
+Task 6: Find the number of users who are absent and tasks not submitted between 15 Oct 2020 and 31 Oct 2020
+javascript-
+
+db.users.aggregate([
+  {
+    $lookup: {
+      from: "attendance",
+      localField: "_id",
+      foreignField: "user_id",
+      as: "attendance_info"
+    }
+  },
+  {
+    $match: {
+      "attendance_info.date": { $gte: ISODate("2020-10-15"), $lte: ISODate("2020-10-31") },
+      "attendance_info.present": false
+    }
+  },
+  {
+    $lookup: {
+      from: "tasks",
+      localField: "_id",
+      foreignField: "user_id",
+      as: "task_info"
+    }
+  },
+  {
+    $match: { "task_info": { $size: 0 } }
+  },
+  {
+    $group: {
+      _id: null,
+      count: { $sum: 1 }
+    }
+  }
+])
